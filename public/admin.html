@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel do Casamento</title>
+    <style>
+        :root {
+            --color-primary: #947561;
+            --color-secondary: #5d4a42;
+            --color-background: #faf4f0;
+            --color-success: #4CAF50;
+            --color-warning: #f44336;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        body {
+            background: var(--color-background);
+            padding: 2rem 1rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--color-primary);
+            margin-bottom: 2rem;
+            font-size: 2.5rem;
+        }
+
+        .cards-container {
+            display: grid;
+            gap: 2rem;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .card h2 {
+            color: var(--color-primary);
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        .stats {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-item {
+            flex: 1;
+            text-align: center;
+            padding: 1rem;
+            border-radius: 10px;
+            background: rgba(148, 117, 97, 0.1);
+        }
+
+        .stat-number {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--color-primary);
+        }
+
+        .stat-label {
+            color: var(--color-secondary);
+            font-size: 0.9rem;
+        }
+
+        .list {
+            list-style: none;
+        }
+
+        .list-item {
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 8px;
+            background: rgba(148, 117, 97, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .badge {
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .available {
+            background: rgba(76, 175, 80, 0.1);
+            color: var(--color-success);
+        }
+
+        .reserved {
+            background: rgba(244, 67, 54, 0.1);
+            color: var(--color-warning);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: var(--color-primary);
+        }
+
+        @media (max-width: 768px) {
+            .stats {
+                flex-direction: column;
+            }
+            
+            .stat-item {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Painel do Casamento</h1>
+        
+        <div class="cards-container">
+            <!-- Presenças -->
+            <div class="card">
+                <h2>🎉 Confirmações de Presença</h2>
+                <div class="stats" id="presencaStats"></div>
+                <ul class="list" id="presencaList"></ul>
+            </div>
+
+            <!-- Presentes -->
+            <div class="card">
+                <h2>🎁 Lista de Presentes</h2>
+                <div class="stats" id="presenteStats"></div>
+                <ul class="list" id="presenteList"></ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Função para formatar data
+        function formatDate(dateString) {
+            const options = { 
+                day: '2-digit', 
+                month: 'long', 
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            };
+            return new Date(dateString).toLocaleDateString('pt-BR', options);
+        }
+
+        // Carregar dados de presença
+        async function loadPresencas() {
+            try {
+                const response = await fetch('/presencas');
+                const data = await response.json();
+                
+                // Atualizar stats
+                document.getElementById('presencaStats').innerHTML = `
+                    <div class="stat-item">
+                        <div class="stat-number">${data.totalConvidados}</div>
+                        <div class="stat-label">Convidados</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">${data.totalAcompanhantes}</div>
+                        <div class="stat-label">Acompanhantes</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">${data.totalPessoas}</div>
+                        <div class="stat-label">Total Pessoas</div>
+                    </div>
+                `;
+
+                // Popular lista
+                const list = data.detalhes.map(item => `
+                    <li class="list-item">
+                        <div>
+                            <strong>${item.nomePrincipal}</strong>
+                            <div style="color: var(--color-secondary); font-size: 0.9rem; margin-top: 0.5rem">
+                                ${item.membros.join(', ')}
+                            </div>
+                        </div>
+                        <span class="badge">${item.acompanhantes} 🧑🤝🧑</span>
+                    </li>
+                `).join('');
+                
+                document.getElementById('presencaList').innerHTML = list;
+
+            } catch (error) {
+                console.error('Erro ao carregar presenças:', error);
+            }
+        }
+
+        // Carregar dados de presentes
+        async function loadPresentes() {
+            try {
+                const response = await fetch('/reservas');
+                const data = await response.json();
+                
+                // Atualizar stats
+                document.getElementById('presenteStats').innerHTML = `
+                    <div class="stat-item">
+                        <div class="stat-number">${data.totalReservados}</div>
+                        <div class="stat-label">Reservados</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">${data.totalPresentes}</div>
+                        <div class="stat-label">Total Presentes</div>
+                    </div>
+                `;
+
+                // Popular lista
+                const list = data.detalhes.map(item => `
+                    <li class="list-item">
+                        <div>
+                            <strong>${item.presente}</strong>
+                            ${item.reservado ? `
+                                <div style="color: var(--color-secondary); font-size: 0.9rem; margin-top: 0.5rem">
+                                    Reservado por: ${item.reservadoPor}<br>
+                                    ${formatDate(item.dataReserva)}
+                                </div>
+                            ` : ''}
+                        </div>
+                        <span class="badge ${item.reservado ? 'reserved' : 'available'}">
+                            ${item.reservado ? 'Reservado' : 'Disponível'}
+                        </span>
+                    </li>
+                `).join('');
+                
+                document.getElementById('presenteList').innerHTML = list;
+
+            } catch (error) {
+                console.error('Erro ao carregar presentes:', error);
+            }
+        }
+
+        // Inicializar
+        (async () => {
+            await loadPresencas();
+            await loadPresentes();
+        })();
+    </script>
+</body>
+</html>

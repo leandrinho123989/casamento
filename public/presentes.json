@@ -1,0 +1,94 @@
+[
+  {
+    "id": 1,
+    "nome": "Pix - Vakinha Lua de Mel",
+    "foto": "fotos/lua_mel.jpg",
+    "tipo": "pix",
+    "chave": "11964474801"    
+  },
+  {
+    "id": 2,
+    "nome": "Pix - Vakinha Reforma do AP",
+    "foto": "fotos/reforma_ap.jpg", 
+    "tipo": "pix",
+    "chave": "11964474801"
+  },
+  {
+    "id": 4,
+    "nome": "PlayStation 5",
+    "foto": "fotos/ps5.jpg",
+    "status": "disponível"
+  },
+  {
+    "id": 5,
+    "nome": "TV - Quarto",
+    "foto": "fotos/tv_quarto.jpeg",
+    "status": "disponível"
+  },
+  {
+    "id": 7,
+    "nome": "Cama",
+    "foto": "fotos/cama.jpeg",
+    "status": "disponível"
+  },
+  {
+    "id": 6,
+    "nome": "Mesa & Cadeiras - Cozinha",
+    "foto": "fotos/mesa-cadeiras.jpeg",
+    "status": "disponível"
+  },
+  {
+    "id": 8,
+    "nome": "Churrasqueira Elétrica",
+    "foto": "fotos/churrasqueira-eletrica.jpeg",
+    "status": "disponível"
+  },
+  {
+    "id": 9,
+    "nome": "Cortinas - Sala",
+    "foto": "fotos/cortinas.jpeg",
+    "status": "disponível"
+  },
+  {
+    "id": 13,
+    "nome": "Box - Banheiro",
+    "foto": "fotos/box.png",
+    "status": "disponível"
+  },
+  {
+    "id": 3,
+    "nome": "Travessa Assadeira - Porcelana Branca",
+    "foto": "fotos/assadeira-porcelana.jpg",
+    "status": "reservado"
+  },
+  {
+    "id": 10,
+    "nome": "Manta para Sofá",
+    "foto": "fotos/manta.jpg",
+    "status": "disponível"
+  },
+  {
+    "id": 11,
+    "nome": "Travesseiros",
+    "foto": "fotos/travesseiros.jpeg",
+    "status": "disponível"
+  },
+  {
+    "id": 12,
+    "nome": "Persianas",
+    "foto": "fotos/persiana.jpeg",
+    "status": "disponível"
+  },
+  {
+    "id": 14,
+    "nome": "Varal Retratil",
+    "foto": "fotos/varol.jpeg",
+    "status": "disponível"
+  },
+  {
+    "id": 15,
+    "nome": "Processador Legumes",
+    "foto": "fotos/processador.jpeg",
+    "status": "disponível"
+  }
+]
