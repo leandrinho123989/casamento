@@ -443,18 +443,34 @@ document.querySelector('.next').addEventListener('click', () => {
 });
 
 showSlide(0);
+// Modifique o evento touchmove para afetar apenas o carrossel
+const carrossel = document.querySelector('.carrossel-elegante'); // Selecionar o carrossel correto
 
-document.addEventListener('touchmove', function(e) {
+// Apenas prevenir zoom no carrossel
+if(carrossel) {
+  carrossel.addEventListener('touchmove', function(e) {
     if(e.scale !== 1) e.preventDefault();
   }, { passive: false });
 
   let touchStartX = 0;
 
-carrossel.addEventListener('touchstart', e => {
-  touchStartX = e.changedTouches[0].screenX;
-});
+  carrossel.addEventListener('touchstart', e => {
+    touchStartX = e.changedTouches[0].screenX;
+  });
 
-carrossel.addEventListener('touchend', e => {
-  const diff = touchStartX - e.changedTouches[0].screenX;
-  if(Math.abs(diff) > 50) diff > 0 ? nextSlide() : prevSlide();
-});
+  carrossel.addEventListener('touchend', e => {
+    const diff = touchStartX - e.changedTouches[0].screenX;
+    if(Math.abs(diff) > 50) diff > 0 ? nextSlide() : prevSlide();
+  });
+}
+
+// Funções de navegação do carrossel
+function nextSlide() {
+    const newIndex = (slideIndex + 1) % slides.length;
+    showSlide(newIndex);
+  }
+  
+  function prevSlide() {
+    const newIndex = (slideIndex - 1 + slides.length) % slides.length;
+    showSlide(newIndex);
+  }
