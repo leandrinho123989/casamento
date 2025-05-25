@@ -20,17 +20,15 @@ app.get('/presencas', async (req, res) => {
 
     const estatisticas = {
       totalConvidados: presencas.length,
-      totalAcompanhantes: presencas.reduce((acc, curr) => acc + curr.membros.length, 0),
-      totalPessoas: presencas.reduce((acc, curr) => acc + 1 + curr.membros.length, 0),
+      totalConfirmados: presencas.reduce((acc, curr) => acc + curr.confirmados.length, 0),
       detalhes: presencas.map(p => ({
-        nomePrincipal: p.nomePrincipal,
-        acompanhantes: p.membros.length,
-        membros: p.membros.map(m => m.nome)
+        convidadoPrincipal: p.convidadoPrincipal,
+        confirmados: p.confirmados,
+        dataConfirmacao: p._metadata.timestamp
       }))
     };
 
     res.json(estatisticas);
-
   } catch (error) {
     console.error('Erro ao ler presenças:', error);
     res.status(500).json({ error: 'Erro ao carregar dados' });
@@ -63,10 +61,21 @@ app.get('/reservas', async (req, res) => {
       totalPresentes: presentes.length,
       detalhes: reservasFormatadas
     });
-
   } catch (error) {
     console.error('Erro ao ler reservas:', error);
     res.status(500).json({ error: 'Erro ao carregar dados' });
+  }
+});
+
+// Nova rota para buscar convidados
+app.get('/convidados', async (req, res) => {
+  try {
+    const convidadosPath = path.join(publicDir, 'convidados.json');
+    const rawData = await fs.promises.readFile(convidadosPath, 'utf8');
+    res.json(JSON.parse(rawData));
+  } catch (error) {
+    console.error('Erro ao carregar convidados:', error);
+    res.status(500).json({ error: 'Erro ao carregar lista de convidados' });
   }
 });
 
@@ -90,7 +99,8 @@ app.get('/reservas', async (req, res) => {
           nome: "Jantar Romântico",
           foto: "fotos/presente-01.jpg"
         }
-      ] // Exemplo básico
+      ],
+      'convidados.json': [] // Arquivo vazio será preenchido com dados da planilha
     };
 
     for (const [file, initialData] of Object.entries(essentialFiles)) {
@@ -139,19 +149,19 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Rota para salvar presenças
+// Nova rota para salvar presenças
 app.post('/salvar-presenca', async (req, res) => {
   const presencasPath = path.join(publicDir, 'presencas.json');
   
   try {
-    console.log('📥 Recebendo solicitação de presença:', req.body);
+    console.log('📥 Recebendo confirmação de presença:', req.body);
 
-    if (!req.body?.nomePrincipal?.trim()) {
+    if (!req.body?.convidadoPrincipal?.trim()) {
       throw new Error('Nome do convidado principal é obrigatório');
     }
 
-    if (!Array.isArray(req.body.membros)) {
-      throw new Error('Formato inválido para membros da família');
+    if (!Array.isArray(req.body.confirmados)) {
+      throw new Error('Formato inválido para lista de confirmados');
     }
 
     const release = await lockfile.lock(presencasPath, {
@@ -164,7 +174,8 @@ app.post('/salvar-presenca', async (req, res) => {
     const presencas = JSON.parse(rawData);
 
     const novaPresenca = {
-      ...req.body,
+      convidadoPrincipal: req.body.convidadoPrincipal,
+      confirmados: req.body.confirmados,
       _metadata: {
         ip: req.ip,
         userAgent: req.headers['user-agent'],
@@ -181,7 +192,7 @@ app.post('/salvar-presenca', async (req, res) => {
     );
 
     await release();
-    console.log('✅ Presença salva com sucesso');
+    console.log('✅ Presença confirmada com sucesso');
 
     res.json({ success: true, recordsCount: presencas.length });
 
@@ -194,7 +205,7 @@ app.post('/salvar-presenca', async (req, res) => {
   }
 });
 
-// Nova rota para reservas
+// Rota para reservas de presentes
 app.post('/salvar-reserva', async (req, res) => {
   const reservasPath = path.join(publicDir, 'reservas.json');
   
