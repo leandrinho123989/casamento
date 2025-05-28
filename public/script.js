@@ -106,7 +106,7 @@ function renderizarPresente(presente, reservas) {
     return `
         <div class="presente-item-premium ${reservado ? 'reservado' : ''}">
             <div class="presente-content">
-                <img src="${presente.foto}" alt="${presente.nome}" loading="lazy" class="foto-presente-premium">
+                <img src="${presente.foto}" alt="${presente.nome}" class="foto-presente-premium">
                 <h3>${presente.nome}</h3>
                 <div class="presente-status-premium ${reservado ? 'reservado' : 'disponivel'}">
                     ${reservado ? '⛔ Reservado' : '✅ Disponível'}
@@ -124,7 +124,7 @@ function renderizarPix(presente) {
     return `
         <div class="presente-item-premium pix-item" onclick="mostrarChavePix('${presente.chave}')">
             <div class="presente-content">
-                <img src="${presente.foto}" alt="Presente em dinheiro" loading="lazy" class="foto-presente-premium">
+                <img src="${presente.foto}" alt="Presente em dinheiro" class="foto-presente-premium">
                 <h3>${presente.nome}</h3>
                 <div class="presente-status-premium disponivel">
                     💸 Clique para ver a chave PIX
