@@ -10,6 +10,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Great+Vibes&display=swap" rel="stylesheet">
 </head>
 <body>
+  <div class="progress-bar"></div>
+
   <header>
     <h1>Lana & Leandro</h1>
     <div class="data-casamento">19 • 07 • 2025</div>
@@ -131,9 +133,9 @@
         <div class="decoracao-topo"></div>
       </h2>
       <div class="search-box">
+        <input type="text" placeholder="Pesquisar presente..." id="searchInput">
       </div>
   
-      <!-- Estes dois estavam fora -->
       <div id="lista-presentes" class="lista-presentes-premium"></div>
   
       <div class="modal-footer">
@@ -144,7 +146,6 @@
       </div>
     </div>
   </div>
-  
 
   <!-- Confirmação de Presença -->
   <section class="confirmacao-presenca">
@@ -154,7 +155,7 @@
     </h2>
     <p class="texto-destaque">
       Sua confirmação é muito importante!<br>
-      <span class="destaque-ouro">Prazo final: 31/05/2025</span>
+      <span class="destaque-ouro">Prazo final: 02/06/2025</span>
     </p>
 
     <div class="pesquisa-convidado">
@@ -167,6 +168,9 @@
         aria-label="Pesquisar convidado"
       >
       <div id="resultadosPesquisa" class="lista-resultados"></div>
+      <div id="loadingPesquisa" class="loading-indicator" style="display: none;">
+        🔍 Buscando convidados...
+      </div>
     </div>
 
     <form id="formConfirmacao" class="form-confirmacao" style="display: none;">

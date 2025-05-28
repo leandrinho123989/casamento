@@ -1,32 +1,47 @@
 // =============================================
-// Variáveis Globais e Constantes
+// Configurações Globais
 // =============================================
-let currentFilter = 'all';
-let currentIndex = 0;
-let searchTimeout;
 const API_ENDPOINTS = {
     presencas: '/salvar-presenca',
     reservas: '/salvar-reserva',
     convidados: '/convidados'
 };
 
-// =============================================
-// Sistema de Confirmação de Presença (NOVO)
-// =============================================
+let currentFilter = 'all';
+let slideIndex = 0;
+const CONVIDADOS_MOCK = [ // Mock para testes
+    {
+        convidadoPrincipal: "Leandro Borges",
+        acompanhantes: ["Maria Silva", "João Oliveira"]
+    }
+];
 
+// =============================================
+// Sistema de Confirmação de Presença
+// =============================================
 async function carregarConvidados() {
-    const response = await fetch(API_ENDPOINTS.convidados);
-    return await response.json();
+    try {
+         const response = await fetch(API_ENDPOINTS.convidados);
+         return await response.json();
+        
+        return CONVIDADOS_MOCK; // Mock temporário
+    } catch (error) {
+        mostrarErro('Erro ao carregar convidados', error);
+        return [];
+    }
 }
 
 function exibirResultadosPesquisa(resultados) {
     const container = document.getElementById('resultadosPesquisa');
-    container.innerHTML = resultados.map(convidado => `
-        <div class="resultado-item" data-nome="${convidado.convidado}">
-            ${convidado.convidado}
-        </div>
-    `).join('');
+    container.innerHTML = resultados.length > 0 
+        ? resultados.map(convidado => `
+            <div class="resultado-item" data-nome="${convidado.convidadoPrincipal}">
+                <span class="nome-convidado">${convidado.convidadoPrincipal}</span>
+            </div>
+        `).join('')
+        : `<div class="nenhum-resultado">😕 Nenhum convidado encontrado</div>`;
 }
+
 
 function criarCheckboxAcompanhantes(acompanhantes) {
     return acompanhantes.map(acomp => `
@@ -40,62 +55,58 @@ function criarCheckboxAcompanhantes(acompanhantes) {
 }
 
 async function carregarDetalhesConvidado(nome) {
-    const convidados = await carregarConvidados();
-    const convidado = convidados.find(c => c.convidado === nome);
-    
-    document.getElementById('nomeConvidadoPrincipal').textContent = nome;
-    document.getElementById('listaAcompanhantes').innerHTML = 
-        criarCheckboxAcompanhantes(convidado.acompanhantes);
-    document.getElementById('formConfirmacao').style.display = 'block';
+    try {
+        const convidados = await carregarConvidados();
+        const convidado = convidados.find(c => c.convidadoPrincipal === nome);
+        
+        if (!convidado) {
+            throw new Error('Convidado não encontrado');
+        }
+
+        document.getElementById('nomeConvidadoPrincipal').textContent = nome;
+        document.getElementById('listaAcompanhantes').innerHTML = 
+            criarCheckboxAcompanhantes(convidado.acompanhantes);
+        document.getElementById('formConfirmacao').style.display = 'block';
+    } catch (error) {
+        Swal.fire('Erro', error.message, 'error');
+    }
 }
 
 // =============================================
 // Sistema de Presentes
 // =============================================
-
 async function carregarPresentes() {
     try {
         const listaPresentes = document.getElementById('lista-presentes');
         listaPresentes.classList.add('loading');
-        listaPresentes.innerHTML = Array(6).fill(`
-            <div class="presente-item-premium skeleton-loading"></div>
-        `).join('');
+        listaPresentes.innerHTML = Array(6).fill('<div class="presente-item-premium skeleton-loading"></div>').join('');
 
         const [presentes, reservas] = await Promise.all([
             fetch('presentes.json').then(r => r.json()),
             fetch('reservas.json').then(r => r.json())
         ]);
 
-        listaPresentes.innerHTML = presentes.map(presente => renderizarPresente(presente, reservas)).join('');
+        listaPresentes.innerHTML = presentes.map(presente => 
+            presente.tipo === 'pix'
+                ? renderizarPix(presente)
+                : renderizarPresente(presente, reservas)
+        ).join('');
 
         filtrarPresentes(currentFilter);
         atualizarContadores();
-        listaPresentes.classList.remove('loading');
     } catch (error) {
-        listaPresentes.classList.remove('loading');
         mostrarErro('Erro ao carregar presentes', error);
+    } finally {
+        listaPresentes.classList.remove('loading');
     }
 }
 
 function renderizarPresente(presente, reservas) {
-    if(presente.tipo === 'pix') {
-        return `
-            <div class="presente-item-premium pix-item" onclick="mostrarChavePix('${presente.chave}')">
-                <div class="presente-content">
-                    <img src="${presente.foto}" alt="${presente.nome}" class="foto-presente-premium">
-                    <h3>${presente.nome}</h3>
-                    <div class="presente-status-premium disponivel">
-                        💸 Clique para ver a chave PIX
-                    </div>
-                </div>
-            </div>`;
-    }
-
     const reservado = reservas.some(r => r.id_presente === presente.id);
     return `
         <div class="presente-item-premium ${reservado ? 'reservado' : ''}">
             <div class="presente-content">
-                <img src="${presente.foto}" alt="${presente.nome}" class="foto-presente-premium">
+                <img src="${presente.foto}" alt="${presente.nome}" loading="lazy" class="foto-presente-premium">
                 <h3>${presente.nome}</h3>
                 <div class="presente-status-premium ${reservado ? 'reservado' : 'disponivel'}">
                     ${reservado ? '⛔ Reservado' : '✅ Disponível'}
@@ -109,93 +120,62 @@ function renderizarPresente(presente, reservas) {
         </div>`;
 }
 
+function renderizarPix(presente) {
+    return `
+        <div class="presente-item-premium pix-item" onclick="mostrarChavePix('${presente.chave}')">
+            <div class="presente-content">
+                <img src="${presente.foto}" alt="Presente em dinheiro" loading="lazy" class="foto-presente-premium">
+                <h3>${presente.nome}</h3>
+                <div class="presente-status-premium disponivel">
+                    💸 Clique para ver a chave PIX
+                </div>
+            </div>
+        </div>`;
+}
+
 // =============================================
 // Funções Compartilhadas
 // =============================================
-
 function filtrarPresentes(filtro) {
     currentFilter = filtro;
-    const itens = document.querySelectorAll('.presente-item-premium');
-    
-    itens.forEach(item => {
+    document.querySelectorAll('.presente-item-premium').forEach(item => {
         const isPix = item.classList.contains('pix-item');
         const isReservado = item.classList.contains('reservado');
         
-        if(isPix) {
-            item.style.display = 'block';
-            return;
-        }
-
-        switch(filtro) {
-            case 'disponiveis':
-                item.style.display = isReservado ? 'none' : 'block';
-                break;
-            case 'reservados':
-                item.style.display = isReservado ? 'block' : 'none';
-                break;
-            default:
-                item.style.display = 'block';
-        }
+        item.style.display = isPix ? 'block' : 
+            filtro === 'disponiveis' ? !isReservado :
+            filtro === 'reservados' ? isReservado : 'block';
     });
     atualizarContadores();
-}
-
-function fecharModal() {
-    document.getElementById('modal-presentes').style.display = 'none';
 }
 
 function atualizarContadores() {
     const total = document.querySelectorAll('.presente-item-premium:not(.pix-item)').length;
     const disponiveis = document.querySelectorAll('.presente-item-premium:not(.reservado):not(.pix-item)').length;
-    
     document.getElementById('disponiveis-count').textContent = disponiveis;
     document.getElementById('total-count').textContent = total;
 }
 
 // =============================================
-// Funções de Utilitários
-// =============================================
-
-function debounce(func, timeout = 300) {
-    let timer;
-    return (...args) => {
-        clearTimeout(timer);
-        timer = setTimeout(() => { func.apply(this, args); }, timeout);
-    };
-}
-
-function mostrarErro(titulo, error) {
-    console.error(error);
-    Swal.fire(titulo, error.message, 'error');
-}
-
-// =============================================
 // Sistema de Carrossel
 // =============================================
-
-let slideIndex = 0;
-const slides = document.querySelectorAll('.slide');
-
 function showSlide(index) {
-    const offset = index * -100;
-    document.querySelector('.slides').style.transform = `translateX(${offset}%)`;
+    const slides = document.querySelector('.slides');
+    slides.style.transform = `translateX(-${index * 100}%)`;
     slideIndex = index;
 }
 
 function nextSlide() {
-    const newIndex = (slideIndex + 1) % slides.length;
-    showSlide(newIndex);
+    showSlide((slideIndex + 1) % document.querySelectorAll('.slide').length);
 }
 
 function prevSlide() {
-    const newIndex = (slideIndex - 1 + slides.length) % slides.length;
-    showSlide(newIndex);
+    showSlide((slideIndex - 1 + document.querySelectorAll('.slide').length) % document.querySelectorAll('.slide').length);
 }
 
 // =============================================
-// Sistema Principal
+// Contagem Regressiva
 // =============================================
-
 function updateCountdown() {
     const eventDate = new Date('2025-07-19T12:00:00');
     const now = new Date();
@@ -222,21 +202,37 @@ function updateCountdown() {
 }
 
 // =============================================
-// Event Listeners
+// Utilitários
 // =============================================
+function debounce(func, timeout = 300) {
+    let timer;
+    return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => func.apply(this, args), timeout);
+    };
+}
 
+function mostrarErro(titulo, error) {
+    console.error(error);
+    Swal.fire(titulo, error.message || 'Erro desconhecido', 'error');
+}
+
+// =============================================
+// Event Listeners e Inicialização
+// =============================================
 document.addEventListener('DOMContentLoaded', () => {
-    // Configuração básica
+    // Configuração inicial
     setInterval(updateCountdown, 1000);
     updateCountdown();
     showSlide(0);
 
-    // Sistema de Presentes
+    // Presentes
     document.getElementById('botao-ver-presentes').addEventListener('click', () => {
         document.getElementById('modal-presentes').style.display = 'flex';
         carregarPresentes();
     });
 
+    // Filtros
     document.querySelectorAll('.filtros button').forEach(btn => {
         btn.addEventListener('click', function() {
             document.querySelector('.filtro-ativo')?.classList.remove('filtro-ativo');
@@ -245,73 +241,85 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    document.querySelector('.search-box input').addEventListener('input', debounce(e => {
+    // Pesquisa de presentes
+    document.getElementById('searchInput').addEventListener('input', debounce(e => {
         const termo = e.target.value.toLowerCase();
         document.querySelectorAll('.presente-item-premium').forEach(item => {
-            item.style.display = item.querySelector('h3').textContent.toLowerCase().includes(termo) 
-                ? 'block' 
-                : 'none';
+            item.style.display = item.querySelector('h3').textContent.toLowerCase().includes(termo) ? 'block' : 'none';
         });
         atualizarContadores();
     }, 300));
 
-    // Sistema de Confirmação (NOVO)
+    // Confirmação de presença
     document.getElementById('pesquisaInput').addEventListener('input', debounce(async (e) => {
-        const termo = e.target.value.toLowerCase();
-        if(termo.length < 3) {
-            document.getElementById('resultadosPesquisa').innerHTML = '';
+        const termo = e.target.value.trim().toLowerCase();
+        const resultadosDiv = document.getElementById('resultadosPesquisa');
+        const loadingDiv = document.getElementById('loadingPesquisa');
+        
+        resultadosDiv.innerHTML = '';
+        if (termo.length < 3) {
+            loadingDiv.style.display = 'none';
             return;
         }
-        
-        const convidados = await carregarConvidados();
-        const resultados = convidados.filter(c => 
-            c.convidado.toLowerCase().includes(termo)
-        );
-        exibirResultadosPesquisa(resultados);
+
+        try {
+            loadingDiv.style.display = 'block';
+            const convidados = await carregarConvidados();
+            const resultados = convidados.filter(c =>
+                c?.convidadoPrincipal?.toLowerCase().includes(termo) ||
+                (Array.isArray(c?.acompanhantes) && c.acompanhantes.some(a => a.toLowerCase().includes(termo)))
+              );
+              
+            exibirResultadosPesquisa(resultados);
+        } catch (error) {
+            mostrarErro('Erro na pesquisa', error);
+        } finally {
+            loadingDiv.style.display = 'none';
+        }
     }, 300));
 
     document.getElementById('resultadosPesquisa').addEventListener('click', (e) => {
         const convidado = e.target.closest('.resultado-item');
         if (convidado) {
-            const nome = convidado.dataset.nome;
-            document.getElementById('pesquisaInput').value = nome;
+            document.getElementById('pesquisaInput').value = convidado.dataset.nome;
             document.getElementById('resultadosPesquisa').innerHTML = '';
-            carregarDetalhesConvidado(nome);
+            carregarDetalhesConvidado(convidado.dataset.nome);
         }
     });
 
     document.getElementById('formConfirmacao').addEventListener('submit', async (e) => {
         e.preventDefault();
-        
-        const convidadoPrincipal = document.getElementById('nomeConvidadoPrincipal').textContent;
-        const checkboxes = document.querySelectorAll('input[name="confirmados"]:checked');
-        const confirmados = Array.from(checkboxes).map(cb => cb.value);
+        const confirmados = Array.from(document.querySelectorAll('input[name="confirmados"]:checked'))
+            .map(cb => cb.value);
         
         try {
             const response = await fetch(API_ENDPOINTS.presencas, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ convidadoPrincipal, confirmados })
+                body: JSON.stringify({
+                    convidadoPrincipal: document.getElementById('nomeConvidadoPrincipal').textContent,
+                    confirmados
+                })
             });
-            
+
             if (response.ok) {
-                Swal.fire('✅ Confirmação salva!', 'Obrigado por confirmar sua presença!', 'success');
+                Swal.fire('✅ Sucesso!', 'Presença confirmada com sucesso!', 'success');
                 document.getElementById('formConfirmacao').reset();
                 document.getElementById('formConfirmacao').style.display = 'none';
                 document.getElementById('pesquisaInput').value = '';
             }
         } catch (error) {
-            Swal.fire('❌ Erro', 'Houve um problema ao salvar a confirmação', 'error');
+            mostrarErro('Erro na confirmação', error);
         }
     });
 
-    // Sistema de Carrossel
+    // Carrossel
     document.querySelector('.prev').addEventListener('click', prevSlide);
     document.querySelector('.next').addEventListener('click', nextSlide);
-
-    // Controle touch para carrossel
+    
+    // Controle touch
     const carrossel = document.querySelector('.carrossel-elegante');
-    if(carrossel) {
+    if (carrossel) {
         let touchStartX = 0;
         
         carrossel.addEventListener('touchstart', e => {
@@ -320,10 +328,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         carrossel.addEventListener('touchend', e => {
             const touchEndX = e.changedTouches[0].clientX;
-            const diff = touchStartX - touchEndX;
-            if(Math.abs(diff) > 50) {
-                diff > 0 ? nextSlide() : prevSlide();
-            }
+            Math.abs(touchStartX - touchEndX) > 50 && (touchStartX > touchEndX ? nextSlide() : prevSlide());
         });
     }
 });
@@ -331,35 +336,31 @@ document.addEventListener('DOMContentLoaded', () => {
 // =============================================
 // Funções Globais
 // =============================================
-
-function mostrarChavePix(chave) {
+window.mostrarChavePix = function(chave) {
     Swal.fire({
         title: 'Chave PIX',
         html: `
             <div class="pix-container">
                 <input type="text" id="pix-chave" value="${chave}" readonly>
-                <button onclick="copiarChavePix()" class="botao-copiar">
-                    📋 Copiar
-                </button>
+                <button onclick="copiarChavePix()" class="botao-copiar">📋 Copiar</button>
             </div>`,
         showConfirmButton: false,
         background: 'var(--color-background)'
     });
-}
+};
 
-function copiarChavePix() {
-    const chave = document.getElementById('pix-chave').value;
-    navigator.clipboard.writeText(chave);
-    Swal.fire('✅ Copiado!', 'Chave PIX na área de transferência', 'success');
-}
+window.copiarChavePix = function() {
+    navigator.clipboard.writeText(document.getElementById('pix-chave').value);
+    Swal.fire('✅ Copiado!', 'Chave PIX copiada para área de transferência', 'success');
+};
 
-async function reservarPresente(id, nome) {
+window.reservarPresente = async function(id, nome) {
     try {
         const { value: nomeReserva } = await Swal.fire({
             title: `Reservar ${nome}`,
             input: 'text',
             inputLabel: 'Digite seu nome completo:',
-            inputValidator: (value) => !value && 'O nome é obrigatório!'
+            inputValidator: (value) => !value && 'Nome obrigatório!'
         });
 
         const response = await fetch(API_ENDPOINTS.reservas, {
@@ -368,16 +369,15 @@ async function reservarPresente(id, nome) {
             body: JSON.stringify({ id_presente: id, nome: nomeReserva })
         });
 
-        const data = await response.json();
+        if (!response.ok) throw new Error('Falha na reserva');
         
-        if (!response.ok) {
-            throw new Error(data.error || 'Falha na reserva');
-        }
-
-        Swal.fire('✅ Reservado!', `${nome} reservado por ${nomeReserva}`, 'success');
+        Swal.fire('✅ Sucesso!', `${nome} reservado por ${nomeReserva}`, 'success');
         carregarPresentes();
-        
     } catch (error) {
-        Swal.fire('❌ Erro', error.message || 'Erro desconhecido', 'error');
+        mostrarErro('Erro na reserva', error);
     }
-}
+};
+
+window.fecharModal = function() {
+    document.getElementById('modal-presentes').style.display = 'none';
+};

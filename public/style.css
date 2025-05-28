@@ -1061,6 +1061,7 @@
   transition: all 0.3s ease;
 }
 
+
 .reservar-btn-premium:disabled {
   background: #e0e0e0 !important;
   color: #757575 !important;
@@ -2154,6 +2155,70 @@ section {
 
 .countdown-separador {
   min-width: 20px;
+}
+
+/* Adicione estas regras ao final do style.css */
+
+@media (max-width: 768px) {
+  .countdown {
+    gap: 0.5rem !important;
+    margin: 0 1rem;
+  }
+
+  .countdown-block {
+    min-width: 80px !important;
+    padding: 0.5rem !important;
+    margin: 0.2rem !important;
+  }
+
+  .countdown-time {
+    font-size: 2rem !important;
+  }
+
+  .countdown-label {
+    font-size: 0.8rem !important;
+  }
+
+  .countdown-separador {
+    display: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .countdown-block {
+    min-width: 70px !important;
+    padding: 0.3rem !important;
+  }
+
+  .countdown-time {
+    font-size: 1.8rem !important;
+  }
+
+  .countdown-label {
+    font-size: 0.7rem !important;
+  }
+}
+
+/* Adicione no style.css */
+.lista-resultados {
+  max-height: 60vh;
+  border: 1px solid rgba(154, 107, 77, 0.15);
+}
+
+.resultado-item {
+  padding: 1rem;
+  color: var(--color-secondary);
+  transition: all 0.3s;
+}
+
+.resultado-item:hover {
+  background: var(--color-accent);
+  transform: none;
+}
+
+.resultado-item:before {
+  content: "👤";
+  margin-right: 0.8rem;
 }
 
 

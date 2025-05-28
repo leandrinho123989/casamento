@@ -171,32 +171,34 @@
                 
                 // Atualizar stats
                 document.getElementById('presencaStats').innerHTML = `
-                    <div class="stat-item">
-                        <div class="stat-number">${data.totalConvidados}</div>
-                        <div class="stat-label">Convidados</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-number">${data.totalAcompanhantes}</div>
-                        <div class="stat-label">Acompanhantes</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-number">${data.totalPessoas}</div>
-                        <div class="stat-label">Total Pessoas</div>
-                    </div>
-                `;
+    <div class="stat-item">
+        <div class="stat-number">${data.totalConvidados}</div>
+        <div class="stat-label">Convidados</div>
+    </div>
+    <div class="stat-item">
+        <div class="stat-number">${data.totalConfirmados - data.totalConvidados}</div>
+        <div class="stat-label">Acompanhantes</div>
+    </div>
+    <div class="stat-item">
+        <div class="stat-number">${data.totalConfirmados}</div>
+        <div class="stat-label">Total Pessoas</div>
+    </div>
+`;
+
 
                 // Popular lista
                 const list = data.detalhes.map(item => `
-                    <li class="list-item">
-                        <div>
-                            <strong>${item.nomePrincipal}</strong>
-                            <div style="color: var(--color-secondary); font-size: 0.9rem; margin-top: 0.5rem">
-                                ${item.membros.join(', ')}
-                            </div>
-                        </div>
-                        <span class="badge">${item.acompanhantes} 🧑🤝🧑</span>
-                    </li>
-                `).join('');
+    <li class="list-item">
+        <div>
+            <strong>${item.convidadoPrincipal}</strong>
+            <div style="color: var(--color-secondary); font-size: 0.9rem; margin-top: 0.5rem">
+                ${item.confirmados.join(', ')}
+            </div>
+        </div>
+        <span class="badge">${item.confirmados.length - 1} acompanhantes</span>
+    </li>
+`).join('');
+
                 
                 document.getElementById('presencaList').innerHTML = list;
 
