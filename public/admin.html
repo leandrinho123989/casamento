@@ -168,22 +168,26 @@
             try {
                 const response = await fetch('/presencas');
                 const data = await response.json();
+                const totalAcompanhantes = data.detalhes.reduce((acc, curr) => acc + (curr.confirmados.length - 1), 0);
+
                 
                 // Atualizar stats
                 document.getElementById('presencaStats').innerHTML = `
-    <div class="stat-item">
-        <div class="stat-number">${data.totalConvidados}</div>
-        <div class="stat-label">Convidados</div>
-    </div>
-    <div class="stat-item">
-        <div class="stat-number">${data.totalConfirmados - data.totalConvidados}</div>
-        <div class="stat-label">Acompanhantes</div>
-    </div>
-    <div class="stat-item">
-        <div class="stat-number">${data.totalConfirmados}</div>
-        <div class="stat-label">Total Pessoas</div>
-    </div>
+  <div class="stat-item">
+      <div class="stat-number">${data.totalConvidados}</div>
+      <div class="stat-label">Convidados</div>
+  </div>
+  <div class="stat-item">
+      <div class="stat-number">${totalAcompanhantes}</div>
+      <div class="stat-label">Acompanhantes</div>
+  </div>
+  <div class="stat-item">
+      <div class="stat-number">${data.totalConfirmados}</div>
+      <div class="stat-label">Total Pessoas</div>
+  </div>
 `;
+
+
 
 
                 // Popular lista
@@ -195,7 +199,8 @@
                 ${item.confirmados.join(', ')}
             </div>
         </div>
-        <span class="badge">${item.confirmados.length - 1} acompanhantes</span>
+        <span class="badge">${item.confirmados.filter(nome => nome !== item.convidadoPrincipal).length} acompanhantes</span>
+
     </li>
 `).join('');
 
